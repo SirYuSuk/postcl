@@ -39,6 +39,10 @@ class APIResponse
     @stat_dict
   end
 
+  def info
+    @info
+  end
+
   def location(mode)
     nil unless mode == :sender || mode == :receiver
     format_location(@info[mode])
