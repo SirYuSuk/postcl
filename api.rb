@@ -1,15 +1,20 @@
 require 'httparty'
+require 'time'
 
 class API
-    def self.API_URI
-      "https://jouw.postnl.nl/web/api/default/shipmentStatus/"
-    end
+  class InvalidRequestError < Exception
+  end
 
-    def self.request(b_code, p_code)
-      r = HTTParty.get(self.API_URI + b_code + "-NL-" + p_code, format: :plain)
-      stat_dict = JSON.parse r, symbolize_names: true
-      APIResponse.new(stat_dict)
-    end
+  def self.API_URI
+    "https://jouw.postnl.nl/web/api/default/shipmentStatus/"
+  end
+
+  def self.request(b_code, p_code)
+    r = HTTParty.get(self.API_URI + b_code + "-NL-" + p_code, format: :plain)
+    raise InvalidRequestError if r.code != 200
+    stat_dict = JSON.parse r.body, symbolize_names: true
+    APIResponse.new(stat_dict)
+  end
 end
 
 class APIResponse
@@ -42,5 +47,22 @@ class APIResponse
   def name(mode)
     nil unless mode == :sender || mode == :receiver
     format_name(@info[mode])
+  end
+
+  def stat_index
+    @info[:delivery][:phase][:index]
+  end
+
+  def stat_msg
+    @info[:delivery][:phase][:message]
+  end
+
+  def delivered?
+    @info[:delivery][:isDelivered]
+  end
+
+  def delivery_date
+    t = Time.parse(@info[:delivery][:deliveryDate])
+    t.strftime("%A %d %B, om %k:%M")
   end
 end

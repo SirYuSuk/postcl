@@ -1,3 +1,5 @@
 source 'https://rubygems.org'
 gem 'httparty'
-gem 'yaml'
+gem 'colorize'
+gem 'terminal-table'
+gem 'docopt'

@@ -2,40 +2,53 @@
 require_relative 'command.rb'
 require_relative 'store.rb'
 
-class PostCL
-  def initialize(cli_args)
-    ARGV.clear
-    if check_flags(cli_args)
-      cmd_name = cli_args[1] ? cli_args[1] : "help"
-      @args = cli_args.drop(2)
-    else
-      cmd_name = cli_args[0] ? cli_args[0] : "help"
-      @args = cli_args.drop(1)
-    end
+require 'docopt'
+require 'awesome_print'
 
-    @cmd = Command.command(cmd_name.to_sym)
+doc = <<DOCOPT
+PostCL
+
+Usage:
+  postcl (info|status) (<barcode> <postcode>)...
+  postcl (info|status) -l [-a]
+  postcl (info|status) -e
+  postcl -h | --help
+  postcl -v
+
+Options:
+  -a --alles
+  -l --lijst
+  -e --eerstvolgende
+  -h --help
+  -v
+
+DOCOPT
+
+class PostCL
+  @@VERSION = "0.1"
+
+  def initialize(doc_parse)
+    @args = doc_parse
     @store = Store.new("store.yaml")
 
-    # Promt user with package list
-    @args = promt_list if flag_set?(:l)
+    promt_list if check_arg?("--lijst")
 
-    @cmd.run(@args)
+    Command::check_args(@args)
+    begin
+      Command::run(@args)
+    rescue Command::UnknownCommandError
+      puts "ongelding commando"
+    end
   end
 
   private
 
-  def check_flags(cli_args)
-    return false unless cli_args[0].start_with?("-")
-    @flags = cli_args[0].split("").drop(1).map(&:to_sym)
-    true
-  end
-
-  def flag_set?(flag)
-    @flags.include?(flag)
+  def check_arg?(name)
+    @args[name]
   end
 
   def promt_list
-    p_list = flag_set?(:a) ? @store.packages : @store.undelivered
+    p_list = check_arg?("--alles") ? @store.packages : @store.undelivered
 
     error_exit("Geen zendingen in huidige selectie.") unless p_list.size > 0
 
@@ -56,9 +69,16 @@ class PostCL
       puts "Ongeldige invoer!"
     end
 
-    return p_list[input]["barcode"], p_list[input]["postcode"]
+    @args["<barcode>"] = [p_list[input]["barcode"]]
+    @args["<postcode>"] = [p_list[input]["postcode"]]
+  end
+
+  def self.VERSION
+    @@VERSION
   end
 end
+
+# OUDE MEUK
 
 def error_exit(msg)
   puts msg
@@ -114,6 +134,15 @@ def main
 end
 
 if __FILE__ == $0
-  PostCL.new(ARGV.dup)
-  #main
+  begin
+    doc_parse =  Docopt::docopt(doc, version: PostCL.VERSION)
+  rescue Docopt::Exit => e
+    puts e.message
+    exit 1
+  end
+
+  # Otherwise gets won't work
+  ARGV.clear
+
+  PostCL.new(doc_parse)
 end
