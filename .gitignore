@@ -160,9 +160,3 @@ build-iPhoneSimulator/
 
 # VSCode
 .vscode/
-
-# Bundler
-Gemfile.lock
-
-
-store.yaml
