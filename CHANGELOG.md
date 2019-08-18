@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2019-08-18
+
+### Added
+
+-Specified dependencies in gemspec
+
 ## [0.1.1] - 2019-08-18
 
 ### Added
