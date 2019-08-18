@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 
-require_relative '../../lib/postcl'
-
 require 'docopt'
+require 'postcl'
 
 doc = <<DOCOPT
 PostCL
